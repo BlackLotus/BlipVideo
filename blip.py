@@ -22,9 +22,11 @@ class BlipVideo:
         req.add_header('Accept','text/html')
         resp = urllib2.urlopen(req)
         site=resp.read()
+        links=[]
         for link in re.findall('(https?://blip.tv/[^\'^"^ ]+)',site):
             self.get_info(link)
-            print self.get_video()
+            links.append(self.get_video())
+        return links
 
     def get_info(self,url):
         if re.match('.*blip.tv/rss/flash/.*',url):
@@ -49,11 +51,10 @@ class BlipVideo:
         urlR=re.compile('http:\/\/blip\.tv/([^/]+)/([^/]+)-(\d+)')
         if urlR.match(url):
             (channel,name,vid)=urlR.findall(url)[0]
-            return 'http://blip.tv/rss/flash/%s' % vid
         else:
             site=urllib.urlopen(url).read()
             (channel,name,vid)=urlR.findall(site)[0]
-            return 'http://blip.tv/rss/flash/%s' % vid
+        return 'http://blip.tv/rss/flash/%s' % vid
 
     def get_video(self,codec='video/mp4'):
         for media in self.medias:
@@ -65,4 +66,5 @@ if __name__=="__main__":
     if len(sys.argv)>1:
         blip=BlipVideo()
         for i in range(1,len(sys.argv)):
-            print(blip(sys.argv[i]))
+            for link in blip.find_blip(sys.argv[i]):
+                print link
