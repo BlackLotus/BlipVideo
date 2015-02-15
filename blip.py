@@ -9,20 +9,46 @@ class BlipVideo:
             rss=self.get_rss(url)
             self.get_info(rss)
 
+    def __call__(self,url=""):
+        if re.match('.*blip.tv/.*',url):
+            rss=self.get_rss(url)
+            self.get_info(rss)
+        return blip.get_video()
+
+    def find_blip(self,url):
+        pass
+
     def get_info(self,url):
-        site=urllib.urlopen(url).read()
+        if re.match('.*blip.tv/rss/flash/.*',url):
+            site=urllib.urlopen(url).read()
+        elif re.match('https?://.*blip.tv/.+',url):
+            url=get_rss(url)
+        elif re.match('https?://.*',url):
+            pass
+        else:
+            pass
         title=re.findall('<media:title>(.+)</media:title>',site)[0]
         self.blips=dict(re.findall('<blip:(.+)>(.+)</blip:.+>',site))
         self.medias=[]
-        for media in re.findall('<media:content (.+)\/>',site):
-            self.medias.append(dict([re.findall('(.*)=(.*)',m)[0] for m in shlex.split(media)]))
+        self.codecs=[]
+        for media in re.findall('<media:content (.+)\/?>',site):
+            mdict=dict([re.findall('(.*)=(.*)',m)[0] for m in shlex.split(media)])
+            self.codecs.append(mdict['type'])
+            self.medias.append(mdict)
 
     def get_rss(self,url):
         urlR=re.compile('http:\/\/blip\.tv/([^/]+)/([^/]+)-(\d+)')
         (channel,name,vid)=urlR.findall(url)[0]
         return 'http://blip.tv/rss/flash/%s' % vid
 
+    def get_video(self,codec='video/mp4'):
+        for media in self.medias:
+            if media['type']==codec:
+                return media['url']
+        return self.medias[0]['url']
+
 if __name__=="__main__":
-    blip=BlipVideo('http://blip.tv/the-spoony-experiment/final-fantasy-xiii-review-part-4-6588174')
-    #print blip.blips
-#    print blip.get_rss('http://blip.tv/the-spoony-experiment/final-fantasy-xiii-review-part-4-6588174')
+    if len(sys.argv)>1:
+        blip=BlipVideo()
+        for i in range(1,len(sys.argv)):
+            print(blip(sys.argv[i]))
