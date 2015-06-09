@@ -24,8 +24,12 @@ class BlipVideo:
         site=resp.read()
         links=[]
         for link in re.findall('(https?://blip.tv/[^\'^"^ ]+)',site):
-            self.get_info(link)
-            links.append(self.get_video())
+            link=urllib.unquote(link)
+            if re.match('(https?://blip.tv/play/+)',link):
+                links.append(link)
+            else:
+                self.get_info(link)
+                links.append(self.get_video())
         return links
 
     def get_info(self,url):
@@ -48,6 +52,8 @@ class BlipVideo:
             self.medias.append(mdict)
 
     def get_rss(self,url):
+        url=urllib.unquote(url)
+        print "Get rss from "+url
         urlR=re.compile('http:\/\/blip\.tv/([^/]+)/([^/]+)-(\d+)')
         if urlR.match(url):
             (channel,name,vid)=urlR.findall(url)[0]
