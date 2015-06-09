@@ -2,8 +2,10 @@
 # -*- coding: utf-8 -*-
 import urllib,re,sys,shlex
 import urllib2
+debug=0
 
 class BlipVideo:
+    mainfeed=""
     def __init__(self,url=""):
         if re.match('.*blip.tv/.*',url):
             rss=self.get_rss(url)
@@ -26,7 +28,11 @@ class BlipVideo:
         for link in re.findall('(https?://blip.tv/[^\'^"^ ]+)',site):
             link=urllib.unquote(link)
             if re.match('(https?://blip.tv/play/+)',link):
-                links.append(link)
+                link=urllib.urlopen(link).geturl()
+                link=urllib.unquote(link)
+                self.mainfeed=re.search('(https?://.+\.blip.tv/rss/flash)',link).group(1)
+                self.get_info(re.search('(https?://blip.tv/rss/flash/\d+)',link).group(1))
+                links.append(self.get_video())
             else:
                 self.get_info(link)
                 links.append(self.get_video())
@@ -62,8 +68,10 @@ class BlipVideo:
             (channel,name,vid)=urlR.findall(site)[0]
         return 'http://blip.tv/rss/flash/%s' % vid
 
-    def get_video(self,codec='video/mp4'):
+    def get_video(self,codec='video/x-m4v'):
         for media in self.medias:
+            if debug==1:
+                print media
             if media['type']==codec:
                 return media['url']
         return self.medias[0]['url']
